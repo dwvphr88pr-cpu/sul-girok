@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>술 기록</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="술 기록">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F3F3F1">
+<meta name="robots" content="noindex">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* 한 손으로 쓰는 세로 한 열: 고정된 제목·검색·탭 → 흰 카드 목록 → 오른쪽 아래 기록 버튼. 밝은 단일 테마, 포인트는 차콜 하나. */
+:root{
+  --bg:#F3F3F1;
+  --card:#FFFFFF;
+  --ink:#2A2A28;
+  --sub:#66665F;
+  --faint:#8C8C85;
+  --line:#EDEDE9;
+  --rule:#E2E2DD;
+  --chip:#EFEFEB;
+  --seg:#E7E7E3;
+  --off:#C9C9C3;
+  --danger:#B42318;
+  --scrim:rgba(20,20,18,0.32);
+  --font:'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo',system-ui,sans-serif;
+  --gutter:max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r:max(20px, env(safe-area-inset-right, 0px));
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);min-height:100%;overflow-x:hidden}
+html{padding-top:env(safe-area-inset-top,0px)}
+body{color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+[hidden]{display:none!important}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.app{max-width:480px;margin:0 auto;padding-left:var(--gutter);padding-right:var(--gutter-r);padding-block:0 120px}
+
+/* 상단 */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-top:12px}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:48px}
+.title{margin:0;font-size:22px;font-weight:700;letter-spacing:-0.02em}
+.icon-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin-right:-12px;color:var(--ink);border-radius:12px}
+.icon-btn.left{margin-right:0;margin-left:-12px}
+.text-btn{height:44px;padding:0 4px;font-size:15px;color:var(--ink)}
+.search{margin-top:8px;height:52px;padding:0 16px;background:var(--card);border-radius:14px;display:flex;align-items:center;gap:10px}
+.search input{flex:1;min-width:0;border:0;outline:none;background:transparent;font-size:16px;padding:0}
+.search input::placeholder{color:var(--faint)}
+.search input::-webkit-search-cancel-button{display:none}
+.clear{width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--sub);background:var(--chip)}
+.tabs{margin-top:10px;display:flex;gap:20px;border-bottom:1px solid var(--rule);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{height:44px;flex-shrink:0;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:15px;color:var(--sub);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.tab[aria-selected="true"]{border-bottom-color:var(--ink);color:var(--ink);font-weight:600}
+.tab .n{font-size:12px;font-weight:400;color:var(--sub)}
+
+.sortrow{display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-top:4px}
+.count{font-size:13px;color:var(--sub)}
+.sort{display:flex;align-items:center;gap:2px}
+.sort button{height:44px;padding:0 8px;font-size:13px;color:var(--sub)}
+.sort button[aria-pressed="true"]{color:var(--ink);font-weight:600}
+.sort .dot{color:var(--off);font-size:13px}
+.notice{margin:0 0 12px;padding:12px 16px;border-radius:14px;background:var(--chip);font-size:13px;color:var(--sub);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.notice button{flex-shrink:0;height:32px;font-size:13px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+
+/* 목록 */
+.card{background:var(--card);border-radius:18px}
+.row{width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px 14px 14px;text-align:left}
+.row + .row{border-top:1px solid var(--line)}
+.score{width:36px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.badge{width:32px;height:32px;border-radius:8px;background:var(--ink);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600}
+.plain{font-size:22px;line-height:1;font-weight:400}
+.plain.wish{color:var(--faint)}
+.row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.row-top{display:flex;align-items:center;gap:6px;min-width:0}
+.row-name{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-sub{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{flex-shrink:0;font-size:11px;line-height:18px;padding:0 6px;border-radius:5px;background:var(--chip);color:#55554F}
+.empty{padding:56px 8px;text-align:center;color:var(--sub);font-size:14px;line-height:1.6}
+.cta{margin-top:12px;width:100%;min-height:56px;padding:0 18px;border-radius:16px;background:var(--card);display:flex;align-items:center;gap:12px;font-size:15px;font-weight:500;text-align:left}
+.cta svg{flex-shrink:0}
+.cta span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.fab{position:fixed;z-index:6;right:max(calc(20px + env(safe-area-inset-right,0px)), calc((100vw - 480px) / 2 + 20px));bottom:calc(28px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:30px;background:var(--ink);color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.18)}
+
+/* 상세 */
+.kicker{font-size:13px;color:var(--sub)}
+.dname{margin:2px 0 0;font-size:28px;font-weight:700;letter-spacing:-0.02em;line-height:1.3;text-wrap:balance;overflow-wrap:anywhere}
+.stack{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.scorebox{padding:18px 20px;display:flex;align-items:center;gap:16px}
+.bigbadge{width:48px;height:48px;border-radius:12px;background:var(--ink);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;flex-shrink:0}
+.bignum{width:48px;text-align:center;font-size:36px;font-weight:400;line-height:1;flex-shrink:0}
+.sb-label{font-size:16px;font-weight:600}
+.sb-desc{font-size:13px;color:var(--sub);margin-top:2px}
+.section{padding:6px 20px}
+.section h2{margin:12px 0 4px;font-size:13px;font-weight:500;color:var(--sub)}
+.trow{display:grid;grid-template-columns:64px minmax(0,1fr) 20px;align-items:center;gap:12px;min-height:36px}
+.tname{font-size:14px}
+.bars{display:flex;gap:4px}
+.bars i{flex:1;height:6px;border-radius:3px;background:var(--seg)}
+.bars i.on{background:var(--ink)}
+.tval{font-size:13px;color:var(--sub);text-align:right}
+.kv{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:48px;font-size:15px}
+.kv + .kv{border-top:1px solid var(--line)}
+.kv .k{color:var(--sub)}
+.note{margin:4px 0 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.danger-link{margin-top:20px;height:44px;font-size:14px;color:var(--danger)}
+.confirm{margin-top:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.confirm p{margin:0;font-size:14px}
+.confirm .btns{display:flex;gap:8px}
+.btn{flex:1;height:48px;border-radius:12px;font-size:15px;font-weight:600}
+.btn.primary{background:var(--ink);color:#FFFFFF}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn.danger{background:var(--danger);color:#FFFFFF}
+
+/* 기록하기 */
+.form{display:flex;flex-direction:column;gap:24px;margin-top:12px}
+.formtitle{font-size:16px;font-weight:600;text-align:center;flex:1}
+.bar.form-bar{display:grid;grid-template-columns:72px 1fr 72px}
+.label{display:block;font-size:13px;font-weight:500;color:var(--sub);margin-bottom:8px}
+.labelrow{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.labelrow .label{margin:0}
+.aside{font-size:12px;color:var(--sub)}
+.segs{display:flex;padding:4px;background:var(--seg);border-radius:12px}
+.segs button{flex:1;height:38px;border-radius:9px;font-size:15px;color:#55554F}
+.segs button[aria-pressed="true"]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.10)}
+.field{width:100%;height:52px;padding:0 16px;border:0;border-radius:14px;background:var(--card);font-size:16px;outline:none}
+.field::placeholder,.area::placeholder{color:var(--faint)}
+.field:focus,.area:focus{box-shadow:0 0 0 2px var(--ink)}
+.withunit{position:relative}
+.withunit .field{padding-right:44px}
+.withunit .unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--sub)}
+.area{width:100%;min-height:104px;padding:14px 16px;border:0;border-radius:14px;background:var(--card);font-size:16px;line-height:1.5;resize:none;outline:none;display:block}
+.hint{margin-top:8px;font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hint button{font-size:13px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;height:32px}
+.err{margin-top:8px;font-size:13px;color:var(--danger)}
+.opt{width:100%;min-height:56px;padding:10px 16px 10px 12px;display:flex;align-items:center;gap:12px;text-align:left}
+.opt + .opt{border-top:1px solid var(--line)}
+.opt .n{width:32px;flex-shrink:0;text-align:center;font-size:20px;font-weight:400}
+.opt[aria-checked="true"] .n{font-weight:700}
+.opt .t{flex:1;min-width:0}
+.opt .l{display:block;font-size:15px;font-weight:500}
+.opt .d{display:block;margin-top:2px;font-size:12px;color:var(--sub)}
+.radio{width:22px;height:22px;border-radius:11px;border:1px solid var(--off);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.opt[aria-checked="true"] .radio{background:var(--ink);border-color:var(--ink)}
+.opt[aria-checked="true"] .radio::after{content:"";width:8px;height:8px;border-radius:4px;background:#FFFFFF}
+.togglerow{width:100%;min-height:60px;padding:10px 16px;display:flex;align-items:center;gap:12px;text-align:left}
+.togglerow .t{flex:1;min-width:0}
+.togglerow .l{display:block;font-size:15px;font-weight:500}
+.togglerow .d{display:block;margin-top:2px;font-size:12px;color:var(--sub)}
+.switch{width:51px;height:31px;border-radius:16px;background:var(--seg);position:relative;flex-shrink:0;transition:background .15s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:14px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform .15s}
+[aria-checked="true"] > .switch{background:var(--ink)}
+[aria-checked="true"] > .switch::after{transform:translateX(20px)}
+.more-body{display:flex;flex-direction:column;gap:24px;margin-top:24px}
+.tastecard{padding:4px 16px}
+.tastecard .trow{min-height:44px}
+.tap{display:flex}
+.tap button{flex:1;height:44px;padding:0 2px;display:flex;align-items:center}
+.tap button i{display:block;width:100%;height:6px;border-radius:3px;background:var(--seg)}
+.tap button.on i{background:var(--ink)}
+.defs{margin:8px 2px 0;font-size:12px;color:var(--sub);line-height:1.6}
+.savebar{position:fixed;z-index:6;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--rule);padding-top:12px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));padding-left:var(--gutter);padding-right:var(--gutter-r)}
+.savebar .btn{display:block;width:100%;max-width:440px;margin:0 auto;height:54px;border-radius:14px;font-size:16px}
+.btn[disabled]{opacity:.5}
+
+/* 연결 화면 */
+.setup{padding-top:40px;display:flex;flex-direction:column;gap:20px}
+.setup h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em}
+.setup p{margin:0;font-size:15px;color:var(--sub);line-height:1.6}
+.setup .btn{flex:none;width:100%;height:54px;border-radius:14px;font-size:16px}
+
+/* 시트 · 알림 */
+.scrim{position:fixed;inset:0;z-index:20;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:8px var(--gutter-r) calc(20px + env(safe-area-inset-bottom,0px)) var(--gutter)}
+.sheet h2{margin:12px 0 4px;font-size:16px;font-weight:600}
+.sheet .sub{margin:0 0 8px;font-size:13px;color:var(--sub)}
+.sitem{width:100%;min-height:60px;display:flex;flex-direction:column;justify-content:center;text-align:left;padding:8px 0}
+.sitem + .sitem{border-top:1px solid var(--line)}
+.sitem .l{font-size:15px;font-weight:500}
+.sitem .d{font-size:12px;color:var(--sub);margin-top:2px}
+.sitem.danger .l{color:var(--danger)}
+.sheet .btn{width:100%;margin-top:12px;flex:none;display:block}
+.toast{position:fixed;z-index:30;left:50%;bottom:calc(104px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 40px);padding:12px 18px;border-radius:12px;background:var(--ink);color:#FFFFFF;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,0.18)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div id="layer"></div>
+<div class="sr" aria-live="polite" id="live"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 저장 위치 ---------- */
+  var REPO = 'dwvphr88pr-cpu/sul-girok-data';
+  var FILE = 'drinks.json';
+  var API = 'https://api.github.com/repos/' + REPO + '/contents/' + FILE;
+  var K_TOKEN = 'sul-girok:token', K_CACHE = 'sul-girok:cache', K_PREFS = 'sul-girok:prefs';
+
+  /* ---------- 기준 ---------- */
+  var TYPES = ['소주', '맥주', '막걸리'];
+  var TASTE = {
+    '소주':   [['sweet', '단맛'], ['strong', '독함'], ['finish', '뒷맛'], ['aroma', '향']],
+    '맥주':   [['bitter', '쓴맛'], ['fizz', '탄산'], ['body', '묵직함'], ['aroma', '향']],
+    '막걸리': [['sweet', '단맛'], ['fizz', '탄산'], ['body', '묵직함'], ['sour', '산미']]
+  };
+  var DEFS = {
+    body: '묵직함은 입안에 느껴지는 무게감',
+    strong: '독함은 마실 때 알코올이 쏘는 정도',
+    finish: '뒷맛은 삼킨 뒤 입에 남는 정도',
+    aroma: '향은 잔에서 올라오는 향의 세기'
+  };
+  var SCORES = [
+    [5, '찾아서 산다', '일부러 찾아가서라도 산다'],
+    [4, '보이면 산다', '눈에 띄면 고민 없이 집는다'],
+    [3, '대안으로 산다', '더 좋은 게 없을 때 산다'],
+    [2, '사진 않는다', '있으면 마시지만 돈 주곤 안 산다'],
+    [1, '안 마신다', '있어도 손이 안 간다']
+  ];
+  function scoreInfo(n) { for (var i = 0; i < SCORES.length; i++) if (SCORES[i][0] === n) return SCORES[i]; return null; }
+
+  /* ---------- 상태 ---------- */
+  var store = 'loading';          // loading | ok | offline | auth | none
+  var items = [];
+  var S = { view: 'list', tab: 'all', sort: 'score', q: '', id: null, listY: 0, confirmDelete: false };
+  var F = null;
+  var app = document.getElementById('app');
+  var layer = document.getElementById('layer');
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  try { var saved = JSON.parse(lsGet(K_PREFS) || '{}'); if (saved.tab) S.tab = saved.tab; if (saved.sort) S.sort = saved.sort; } catch (e) {}
+  function savePrefs() { lsSet(K_PREFS, JSON.stringify({ tab: S.tab, sort: S.sort })); }
+  var token = lsGet(K_TOKEN);
+
+  /* ---------- GitHub 저장소 ---------- */
+  function b64ToText(b64) {
+    var bin = atob(String(b64).replace(/\s/g, ''));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function textToB64(text) {
+    var bytes = new TextEncoder().encode(text), bin = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  function ghErr(status) { var e = new Error('github ' + status); e.status = status; return e; }
+  async function gh(method, body, tok) {
+    var res;
+    try {
+      res = await fetch(API + (method === 'GET' ? '?ref=main&t=' + Date.now() : ''), {
+        method: method,
+        cache: 'no-store',
+        headers: {
+          'Authorization': 'Bearer ' + (tok || token),
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        body: body ? JSON.stringify(body) : undefined
+      });
+    } catch (e) { throw ghErr(0); }
+    if (!res.ok) throw ghErr(res.status);
+    return res.json();
+  }
+  async function fetchRemote(tok) {
+    var j = await gh('GET', null, tok);
+    var data = JSON.parse(b64ToText(j.content));
+    return { sha: j.sha, items: Array.isArray(data.items) ? data.items : [] };
+  }
+  async function commit(mutator, message) {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      var cur = await fetchRemote();
+      var next = mutator(cur.items.slice());
+      var text = JSON.stringify({ app: '술 기록', version: 1, items: next }, null, 1) + '\n';
+      try {
+        await gh('PUT', { message: message, content: textToB64(text), sha: cur.sha, branch: 'main' });
+        setItems(next);
+        return;
+      } catch (e) {
+        if (e.status !== 409 && e.status !== 422) throw e;
+      }
+    }
+    throw ghErr(409);
+  }
+  function setItems(list) {
+    items = list;
+    lsSet(K_CACHE, JSON.stringify(list));
+  }
+  async function refresh() {
+    if (!token) { store = 'none'; render(); return; }
+    try {
+      var r = await fetchRemote();
+      setItems(r.items);
+      store = 'ok';
+    } catch (e) {
+      if (e.status === 401 || e.status === 403 || e.status === 404) store = 'auth';
+      else store = items.length ? 'offline' : 'offline';
+    }
+    onData();
+  }
+
+  /* ---------- 도구 ---------- */
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function norm(s) { return String(s || '').replace(/\s+/g, '').toLowerCase(); }
+  function won(n) { return Number(n).toLocaleString('ko-KR') + '원'; }
+  function ymd(iso) { var d = new Date(iso); if (!iso || isNaN(d)) return ''; return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0'); }
+  function firstLine(note) {
+    var t = String(note || '').trim().split('\n')[0];
+    var m = t.match(/^.*?[.!?](?=\s|$)/);
+    return m ? m[0] : t;
+  }
+  function newId() { return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function byId(id) { for (var i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
+  function announce(t) { var l = document.getElementById('live'); l.textContent = ''; setTimeout(function () { l.textContent = t; }, 30); }
+  var toastTimer;
+  function toast(t) {
+    var el = document.querySelector('.toast');
+    if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = t; el.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 2400);
+  }
+  function failText(e) {
+    if (e && (e.status === 401 || e.status === 403 || e.status === 404)) return '저장하지 못했어요. 메뉴(…)에서 GitHub 연결을 확인해 주세요.';
+    if (e && e.status === 0) return '인터넷에 연결되지 않아 저장하지 못했어요.';
+    return '저장하지 못했어요. 잠시 후 다시 눌러 주세요.';
+  }
+  var ICON = {
+    dots: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>',
+    search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#66665F" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+    x: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    plus: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    plusSm: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+    down: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#66665F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+    up: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#66665F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>'
+  };
+
+  /* ---------- 연결 화면 ---------- */
+  function renderSetup(again) {
+    S.view = 'setup';
+    app.innerHTML = '<div class="setup">' +
+      '<h1>술 기록</h1>' +
+      '<p>' + (again ? 'GitHub 연결이 끊겼어요. 토큰이 만료됐거나 지워졌을 수 있어요. 새 토큰을 넣어 주세요.'
+                     : '기록은 내 GitHub 비공개 저장소에 저장돼요. 이 기기에서 처음 한 번만 토큰을 넣어 주세요.') + '</p>' +
+      '<div><label class="label" for="tok">GitHub 토큰</label>' +
+      '<input class="field" id="tok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_로 시작해요"></div>' +
+      '<div id="tokMsg"></div>' +
+      '<button class="btn primary" id="tokGo">연결하기</button>' +
+      (token ? '<button class="btn ghost" id="tokBack">돌아가기</button>' : '') +
+      '</div>';
+    var input = document.getElementById('tok');
+    var go = document.getElementById('tokGo');
+    var back = document.getElementById('tokBack');
+    if (back) back.addEventListener('click', function () { goList(); });
+    async function connect() {
+      var t = input.value.trim();
+      var msg = document.getElementById('tokMsg');
+      if (!t) { msg.innerHTML = '<p class="err">토큰을 붙여 넣어 주세요.</p>'; input.focus(); return; }
+      go.disabled = true; go.textContent = '확인 중';
+      try {
+        var r = await fetchRemote(t);
+        token = t; lsSet(K_TOKEN, t);
+        setItems(r.items); store = 'ok';
+        S.listY = 0; goList(); toast('연결했어요. 기록 ' + r.items.filter(function (x) { return !x.wish; }).length + '개');
+      } catch (e) {
+        go.disabled = false; go.textContent = '연결하기';
+        var text = e.status === 0 ? '인터넷에 연결되지 않았어요.'
+          : e.status === 401 ? '토큰이 맞지 않아요. 복사할 때 빠진 글자가 없는지 확인해 주세요.'
+          : (e.status === 403 || e.status === 404) ? '이 토큰으로는 sul-girok-data 저장소를 열 수 없어요. 토큰을 만들 때 저장소와 권한을 다시 확인해 주세요.'
+          : '연결하지 못했어요. 잠시 후 다시 눌러 주세요.';
+        msg.innerHTML = '<p class="err">' + text + '</p>';
+      }
+    }
+    go.addEventListener('click', connect);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') connect(); });
+  }
+
+  /* ---------- 정렬 · 거르기 ---------- */
+  function recentKey(a, b) {
+    var ac = a.createdAt || '', bc = b.createdAt || '';
+    if (ac && bc) return ac < bc ? 1 : ac > bc ? -1 : 0;
+    if (ac) return -1;
+    if (bc) return 1;
+    return (a.seq || 0) - (b.seq || 0);
+  }
+  function sorted(list) {
+    var copy = list.slice();
+    if (S.sort === 'score') copy.sort(function (a, b) { return ((b.score || 0) - (a.score || 0)) || recentKey(a, b); });
+    else copy.sort(recentKey);
+    return copy;
+  }
+  function visible() {
+    var t = S.tab, q = norm(S.q), list;
+    if (t === 'wish') list = items.filter(function (x) { return x.wish; });
+    else if (t === 'all') list = items.filter(function (x) { return !x.wish || q; });
+    else list = items.filter(function (x) { return !x.wish && x.type === t; });
+    if (q) list = list.filter(function (x) { return norm(x.name).indexOf(q) !== -1; });
+    var out = sorted(list);
+    if (q) out.sort(function (a, b) { return (a.wish ? 1 : 0) - (b.wish ? 1 : 0); });
+    return out;
+  }
+
+  /* ---------- 목록 ---------- */
+  function renderListShell() {
+    app.innerHTML =
+      '<header class="top">' +
+        '<div class="bar"><h1 class="title">술 기록</h1><button class="icon-btn" id="menuBtn" aria-label="설정">' + ICON.dots + '</button></div>' +
+        '<div class="search">' + ICON.search +
+          '<input id="q" type="search" placeholder="이름으로 찾기" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="이름으로 찾기">' +
+          '<button class="clear" id="qClear" aria-label="검색어 지우기" hidden>' + ICON.x + '</button>' +
+        '</div>' +
+        '<div class="tabs" role="tablist" aria-label="주종" id="tabs"></div>' +
+      '</header>' +
+      '<div class="sortrow"><span class="count num" id="count"></span>' +
+        '<div class="sort" role="group" aria-label="정렬"><button data-sort="score">점수순</button><span class="dot" aria-hidden="true">·</span><button data-sort="recent">최근순</button></div>' +
+      '</div>' +
+      '<div id="notice"></div>' +
+      '<div id="rows"></div>' +
+      '<button class="fab" id="fab" aria-label="새 기록">' + ICON.plus + '</button>';
+    var q = document.getElementById('q');
+    q.value = S.q;
+    q.addEventListener('input', function () { S.q = q.value; updateList(); });
+    document.getElementById('qClear').addEventListener('click', function () { S.q = ''; q.value = ''; updateList(); q.focus(); });
+    document.getElementById('menuBtn').addEventListener('click', openMenu);
+    document.getElementById('fab').addEventListener('click', function () { openForm(null, { wish: S.tab === 'wish' }); });
+    app.querySelectorAll('[data-sort]').forEach(function (b) {
+      b.addEventListener('click', function () { S.sort = b.getAttribute('data-sort'); savePrefs(); updateList(); });
+    });
+    updateList();
+  }
+
+  function updateList() {
+    if (S.view !== 'list') return;
+    var tabs = [['all', '전체'], ['소주', '소주'], ['맥주', '맥주'], ['막걸리', '막걸리'], ['wish', '마셔볼 술']];
+    var tried = items.filter(function (x) { return !x.wish; });
+    function cnt(id) {
+      if (id === 'all') return tried.length;
+      if (id === 'wish') return items.length - tried.length;
+      return tried.filter(function (x) { return x.type === id; }).length;
+    }
+    document.getElementById('tabs').innerHTML = tabs.map(function (t) {
+      var n = cnt(t[0]);
+      return '<button class="tab" role="tab" data-tab="' + t[0] + '" aria-selected="' + (S.tab === t[0]) + '">' + t[1] + (n ? '<span class="n num">' + n + '</span>' : '') + '</button>';
+    }).join('');
+    document.querySelectorAll('[data-tab]').forEach(function (b) {
+      b.addEventListener('click', function () { S.tab = b.getAttribute('data-tab'); savePrefs(); updateList(); window.scrollTo(0, 0); });
+    });
+    app.querySelectorAll('[data-sort]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-sort') === S.sort)); });
+    document.getElementById('qClear').hidden = !S.q;
+
+    var notice = document.getElementById('notice');
+    if (store === 'offline') {
+      notice.innerHTML = '<div class="notice"><span>인터넷에 연결되지 않아 마지막으로 불러온 기록을 보여 줘요.</span><button id="retry">다시 불러오기</button></div>';
+      document.getElementById('retry').addEventListener('click', function () { store = 'loading'; refresh(); });
+    } else notice.innerHTML = '';
+
+    var rows = document.getElementById('rows');
+    var countEl = document.getElementById('count');
+    if (store === 'loading' && !items.length) { countEl.textContent = ''; rows.innerHTML = '<p class="empty">기록을 불러오는 중이에요.</p>'; return; }
+
+    var list = visible();
+    countEl.textContent = list.length + '개';
+    var html = '';
+    if (list.length) {
+      html += '<div class="card">' + list.map(rowHtml).join('') + '</div>';
+    } else if (!S.q) {
+      html += items.length ? '<p class="empty">아직 기록이 없어요.</p>'
+                           : '<p class="empty">아직 기록이 없어요.<br>오른쪽 아래 + 버튼으로 첫 술을 남겨 보세요.</p>';
+    } else {
+      html += '<p class="empty" style="padding-bottom:8px">‘' + esc(S.q.trim()) + '’ 기록이 없어요.</p>';
+    }
+    var exact = S.q.trim() && items.some(function (x) { return norm(x.name) === norm(S.q); });
+    if (S.q.trim() && !exact) {
+      html += '<button class="cta" id="ctaAdd">' + ICON.plusSm + '<span>‘' + esc(S.q.trim()) + '’ ' + (S.tab === 'wish' ? '마셔볼 술에 추가' : '기록하기') + '</span></button>';
+    }
+    rows.innerHTML = html;
+    rows.querySelectorAll('[data-id]').forEach(function (b) {
+      b.addEventListener('click', function () { openDetail(b.getAttribute('data-id')); });
+    });
+    var cta = document.getElementById('ctaAdd');
+    if (cta) cta.addEventListener('click', function () { openForm(null, { name: S.q.trim(), wish: S.tab === 'wish' }); });
+  }
+
+  function rowHtml(x) {
+    var mark;
+    if (x.wish) mark = '<span class="plain wish">–</span>';
+    else if (x.score === 5) mark = '<span class="badge num">5</span>';
+    else mark = '<span class="plain num">' + (x.score || '–') + '</span>';
+    var line = firstLine(x.note);
+    var sub = '';
+    if (S.tab === 'all' || S.q) sub = x.type + (line ? ' · ' + line : '');
+    else sub = line;
+    if (x.wish && !line) sub = (S.tab === 'all' || S.q) ? x.type + ' · 마셔볼 술' : '';
+    var label = x.wish ? '마셔볼 술' : (x.score ? x.score + '점 ' + scoreInfo(x.score)[1] : '');
+    return '<button class="row" data-id="' + esc(x.id) + '" aria-label="' + esc(x.name + ', ' + label) + '">' +
+      '<span class="score" aria-hidden="true">' + mark + '</span>' +
+      '<span class="row-main"><span class="row-top"><span class="row-name">' + esc(x.name) + '</span>' + (x.hangover ? '<span class="tag">숙취</span>' : '') + '</span>' +
+      (sub ? '<span class="row-sub">' + esc(sub) + '</span>' : '') + '</span>' +
+    '</button>';
+  }
+
+  function goList() {
+    S.view = 'list'; S.id = null; S.confirmDelete = false;
+    renderListShell();
+    window.scrollTo(0, S.listY || 0);
+  }
+
+  /* ---------- 상세 ---------- */
+  function openDetail(id) {
+    if (S.view === 'list') S.listY = window.scrollY;
+    S.view = 'detail'; S.id = id; S.confirmDelete = false;
+    renderDetail();
+    window.scrollTo(0, 0);
+  }
+
+  function renderDetail() {
+    var x = byId(S.id);
+    if (!x) { goList(); return; }
+    var html = '<header class="top"><div class="bar">' +
+      '<button class="icon-btn left" id="back" aria-label="목록으로">' + ICON.back + '</button>' +
+      '<button class="text-btn" id="edit">편집</button></div></header>';
+    html += '<div class="kicker">' + esc(x.type) + (x.wish ? ' · 마셔볼 술' : '') + '</div>';
+    html += '<h1 class="dname">' + esc(x.name) + '</h1>';
+    html += '<div class="stack">';
+
+    if (x.wish) {
+      html += '<div class="card confirm"><p>아직 마셔 보지 않은 술이에요.</p><div class="btns"><button class="btn primary" id="drank">마셨어요 · 기록하기</button></div></div>';
+    } else if (x.score) {
+      var si = scoreInfo(x.score);
+      html += '<div class="card scorebox">' +
+        (x.score === 5 ? '<span class="bigbadge num">5</span>' : '<span class="bignum num">' + x.score + '</span>') +
+        '<div><div class="sb-label">' + si[1] + '</div><div class="sb-desc">' + si[2] + '</div></div></div>';
+    }
+
+    var tastes = (TASTE[x.type] || []).filter(function (t) { return x.taste && x.taste[t[0]]; });
+    if (!x.wish && tastes.length) {
+      html += '<div class="card section"><h2>맛</h2>' + (TASTE[x.type] || []).map(function (t) {
+        var v = (x.taste && x.taste[t[0]]) || 0;
+        var bars = '';
+        for (var i = 1; i <= 5; i++) bars += '<i class="' + (i <= v ? 'on' : '') + '"></i>';
+        return '<div class="trow"><span class="tname">' + t[1] + '</span><span class="bars" aria-hidden="true">' + bars + '</span><span class="tval num">' + (v || '–') + '</span></div>';
+      }).join('') + '<div style="height:8px"></div></div>';
+    }
+
+    var kv = [];
+    if (x.price) kv.push(['가격', '<span class="num">' + won(x.price) + '</span>']);
+    if (!x.wish && x.hangover) kv.push(['숙취', '있었음']);
+    if (x.createdAt) kv.push([x.wish ? '적은 날' : '기록한 날', '<span class="num">' + ymd(x.createdAt) + '</span>']);
+    if (kv.length) html += '<div class="card section" style="padding-block:0">' + kv.map(function (r) { return '<div class="kv"><span class="k">' + r[0] + '</span><span>' + r[1] + '</span></div>'; }).join('') + '</div>';
+
+    if (x.note) html += '<div class="card section"><h2>' + (x.wish ? '메모' : '의견') + '</h2><p class="note">' + esc(x.note) + '</p></div>';
+    html += '</div>';
+
+    if (S.confirmDelete) {
+      html += '<div class="card confirm" role="alertdialog" aria-label="기록 삭제"><p>‘' + esc(x.name) + '’ 기록을 지울까요? 지우면 되돌릴 수 없어요.</p>' +
+        '<div class="btns"><button class="btn ghost" id="delNo">취소</button><button class="btn danger" id="delYes">삭제</button></div></div>';
+    } else {
+      html += '<button class="danger-link" id="del">기록 삭제</button>';
+    }
+    app.innerHTML = html;
+
+    document.getElementById('back').addEventListener('click', goList);
+    document.getElementById('edit').addEventListener('click', function () { openForm(x, {}); });
+    var drank = document.getElementById('drank');
+    if (drank) drank.addEventListener('click', function () { openForm(x, { wish: false, more: false }); });
+    var del = document.getElementById('del');
+    if (del) del.addEventListener('click', function () { S.confirmDelete = true; renderDetail(); var y = document.getElementById('delNo'); if (y) y.focus(); });
+    var no = document.getElementById('delNo');
+    if (no) no.addEventListener('click', function () { S.confirmDelete = false; renderDetail(); });
+    var yes = document.getElementById('delYes');
+    if (yes) yes.addEventListener('click', function () { removeItem(x, yes); });
+  }
+
+  /* ---------- 기록하기 ---------- */
+  function openForm(x, over) {
+    if (S.view === 'list') S.listY = window.scrollY;
+    var base = x ? JSON.parse(JSON.stringify(x)) : {};
+    F = {
+      id: base.id || null,
+      fromWish: !!(x && x.wish && over.wish === false),
+      type: base.type || (TYPES.indexOf(S.tab) !== -1 ? S.tab : '막걸리'),
+      name: over.name != null ? over.name : (base.name || ''),
+      wish: over.wish != null ? over.wish : !!base.wish,
+      score: base.score || 0,
+      price: base.price ? String(base.price) : '',
+      taste: base.taste || {},
+      hangover: !!base.hangover,
+      note: base.note || '',
+      createdAt: base.createdAt || null,
+      seq: base.seq,
+      err: {}
+    };
+    F.more = over.more != null ? over.more : !!(F.price || F.hangover || F.note || Object.keys(F.taste).some(function (k) { return F.taste[k]; }));
+    S.view = 'form';
+    renderForm();
+    window.scrollTo(0, 0);
+    if (!F.id && !F.name) setTimeout(function () { var n = document.getElementById('fName'); if (n) n.focus(); }, 60);
+  }
+
+  function renderForm() {
+    var title = F.wish ? (F.id ? '마셔볼 술 수정' : '마셔볼 술 추가') : (F.id ? (F.fromWish ? '마신 술 기록' : '기록 수정') : '새 기록');
+    var html = '<header class="top"><div class="bar form-bar">' +
+      '<button class="text-btn" id="close" style="justify-self:start">닫기</button>' +
+      '<div class="formtitle">' + title + '</div><span></span></div></header>';
+    html += '<div class="form">';
+
+    html += '<div><div class="segs" role="group" aria-label="주종">' + TYPES.map(function (t) {
+      return '<button data-type="' + t + '" aria-pressed="' + (F.type === t) + '">' + t + '</button>';
+    }).join('') + '</div></div>';
+
+    html += '<div><label class="label" for="fName">이름</label>' +
+      '<input class="field" id="fName" type="text" autocomplete="off" spellcheck="false" placeholder="예: 해창막걸리 9도" value="' + esc(F.name) + '">' +
+      '<div id="dup"></div>' + (F.err.name ? '<div class="err">' + F.err.name + '</div>' : '') + '</div>';
+
+    if (F.wish) {
+      html += '<div><label class="label" for="fNote">메모</label><textarea class="area" id="fNote" placeholder="어디서 봤는지, 누가 추천했는지.">' + esc(F.note) + '</textarea></div>';
+    } else {
+      html += '<div><div class="labelrow"><span class="label" id="scoreLbl">다시 살까?</span><span class="aside">가격까지 생각해서 골라 주세요.</span></div>' +
+        '<div class="card" role="radiogroup" aria-labelledby="scoreLbl">' + SCORES.map(function (s) {
+          var on = F.score === s[0];
+          return '<button class="opt" role="radio" data-score="' + s[0] + '" aria-checked="' + on + '">' +
+            '<span class="n num">' + s[0] + '</span><span class="t"><span class="l">' + s[1] + '</span>' + (on ? '<span class="d">' + s[2] + '</span>' : '') + '</span>' +
+            '<span class="radio" aria-hidden="true"></span></button>';
+        }).join('') + '</div>' + (F.err.score ? '<div class="err">' + F.err.score + '</div>' : '') + '</div>';
+
+      html += '<div><div class="card"><button class="togglerow" id="moreT" aria-expanded="' + F.more + '">' +
+        '<span class="t"><span class="l">더 적기</span><span class="d">맛 · 숙취 · 의견 · 가격</span></span>' + (F.more ? ICON.up : ICON.down) + '</button></div>';
+      if (F.more) {
+        var defs = TASTE[F.type].map(function (t) { return DEFS[t[0]]; }).filter(Boolean);
+        html += '<div class="more-body">';
+        html += '<div><div class="labelrow"><span class="label">맛</span><span class="aside">세기로 적어요. 5가 가장 강해요.</span></div>' +
+          '<div class="card tastecard">' + TASTE[F.type].map(function (t) {
+            var v = F.taste[t[0]] || 0, b = '';
+            for (var i = 1; i <= 5; i++) b += '<button class="' + (i <= v ? 'on' : '') + '" data-taste="' + t[0] + '" data-v="' + i + '" aria-label="' + t[1] + ' ' + i + '"' + (i === v ? ' aria-pressed="true"' : '') + '><i></i></button>';
+            return '<div class="trow"><span class="tname">' + t[1] + '</span><span class="tap">' + b + '</span><span class="tval num">' + (v || '–') + '</span></div>';
+          }).join('') + '</div>' +
+          (defs.length ? '<p class="defs">' + defs.join(' · ') + '. 모르는 항목은 비워 두세요.</p>' : '') + '</div>';
+        html += '<div class="card"><button class="togglerow" id="hangT" role="switch" aria-checked="' + F.hangover + '">' +
+          '<span class="t"><span class="l">숙취가 있었어요</span><span class="d">다음 날 머리가 아프거나 피곤했다면 켜 두세요.</span></span><span class="switch" aria-hidden="true"></span></button></div>';
+        html += '<div><label class="label" for="fNote">의견</label><textarea class="area" id="fNote" placeholder="어땠는지 한두 줄이면 충분해요. 첫 문장이 목록에 보여요.">' + esc(F.note) + '</textarea></div>';
+        html += '<div><label class="label" for="fPrice">가격</label><div class="withunit"><input class="field num" id="fPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="' + esc(F.price ? Number(F.price).toLocaleString('ko-KR') : '') + '"><span class="unit">원</span></div></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div class="savebar"><button class="btn primary" id="save">저장</button></div>';
+    app.innerHTML = html;
+    bindForm();
+    updateDup();
+  }
+
+  function bindForm() {
+    document.getElementById('close').addEventListener('click', function () { var id = F.id; F = null; if (id && byId(id)) { S.view = 'detail'; S.id = id; renderDetail(); window.scrollTo(0, 0); } else goList(); });
+    app.querySelectorAll('[data-type]').forEach(function (b) {
+      b.addEventListener('click', function () { F.type = b.getAttribute('data-type'); renderForm(); });
+    });
+    var name = document.getElementById('fName');
+    name.addEventListener('input', function () { F.name = name.value; if (F.err.name) { F.err.name = ''; var e = name.parentNode.querySelector('.err'); if (e) e.remove(); } updateDup(); });
+    app.querySelectorAll('[data-score]').forEach(function (b) {
+      b.addEventListener('click', function () { F.score = Number(b.getAttribute('data-score')); F.err.score = ''; renderForm(); var nb = app.querySelector('[data-score="' + F.score + '"]'); if (nb) nb.focus(); });
+    });
+    var m = document.getElementById('moreT');
+    if (m) m.addEventListener('click', function () { F.more = !F.more; renderForm(); var nm = document.getElementById('moreT'); if (nm) nm.focus(); });
+    app.querySelectorAll('[data-taste]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var k = b.getAttribute('data-taste'), v = Number(b.getAttribute('data-v'));
+        F.taste[k] = F.taste[k] === v ? 0 : v;
+        var y = window.scrollY; renderForm(); window.scrollTo(0, y);
+      });
+    });
+    var h = document.getElementById('hangT');
+    if (h) h.addEventListener('click', function () { F.hangover = !F.hangover; h.setAttribute('aria-checked', String(F.hangover)); });
+    var note = document.getElementById('fNote');
+    if (note) {
+      note.addEventListener('input', function () { F.note = note.value; grow(note); });
+      grow(note);
+    }
+    var price = document.getElementById('fPrice');
+    if (price) price.addEventListener('input', function () {
+      var digits = price.value.replace(/[^0-9]/g, '').slice(0, 9);
+      F.price = digits;
+      price.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+    });
+    document.getElementById('save').addEventListener('click', saveForm);
+  }
+  function grow(t) { t.style.height = 'auto'; t.style.height = Math.max(104, t.scrollHeight) + 'px'; }
+
+  function updateDup() {
+    var box = document.getElementById('dup');
+    if (!box || !F) return;
+    var n = norm(F.name);
+    var hit = n && items.filter(function (x) { return x.id !== F.id && norm(x.name) === n; })[0];
+    if (!hit) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="hint">이미 ' + (hit.wish ? '마셔볼 술에 있어요.' : '기록한 술이에요.') + ' <button id="dupOpen">열어 보기</button></div>';
+    document.getElementById('dupOpen').addEventListener('click', function () { F = null; openDetail(hit.id); });
+  }
+
+  async function saveForm() {
+    var name = F.name.trim();
+    F.err = {};
+    if (!name) F.err.name = '이름을 적어 주세요.';
+    if (!F.wish && !F.score) F.err.score = '다시 살지 점수를 골라 주세요.';
+    if (F.err.name || F.err.score) {
+      renderForm();
+      var target = F.err.name ? document.getElementById('fName') : app.querySelector('[data-score]');
+      if (target) { target.scrollIntoView({ block: 'center' }); target.focus(); }
+      return;
+    }
+    var now = new Date().toISOString();
+    var taste = {};
+    TASTE[F.type].forEach(function (t) { if (F.taste[t[0]]) taste[t[0]] = F.taste[t[0]]; });
+    var id = F.id || newId();
+    var doc = {
+      id: id,
+      name: name,
+      type: F.type,
+      wish: !!F.wish,
+      score: F.wish ? null : F.score,
+      taste: F.wish ? {} : taste,
+      hangover: F.wish ? false : !!F.hangover,
+      note: F.note.trim(),
+      price: F.price ? Number(F.price) : null,
+      createdAt: F.fromWish ? now : (F.createdAt || now),
+      updatedAt: now
+    };
+    if (F.seq != null && !F.fromWish) doc.seq = F.seq;
+    var wasEdit = !!F.id && !F.fromWish;
+    var btn = document.getElementById('save');
+    btn.disabled = true; btn.textContent = '저장 중';
+    try {
+      await commit(function (list) {
+        var i = list.findIndex(function (x) { return x.id === id; });
+        if (i === -1) list.push(doc); else list[i] = doc;
+        return list;
+      }, (wasEdit ? '수정: ' : doc.wish ? '마셔볼 술: ' : '기록: ') + name);
+      store = 'ok';
+      F = null;
+      if (wasEdit) { S.view = 'detail'; S.id = id; renderDetail(); window.scrollTo(0, 0); toast('고쳤어요'); }
+      else {
+        S.q = ''; S.tab = doc.wish ? 'wish' : (S.tab === 'wish' ? 'all' : S.tab);
+        if (S.tab !== 'all' && S.tab !== 'wish' && S.tab !== doc.type) S.tab = 'all';
+        S.listY = 0; goList(); toast(doc.wish ? '마셔볼 술에 넣었어요' : '기록했어요');
+      }
+      announce('저장했어요');
+    } catch (e) {
+      btn.disabled = false; btn.textContent = '저장';
+      toast(failText(e));
+    }
+  }
+
+  async function removeItem(x, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '지우는 중'; }
+    try {
+      await commit(function (list) { return list.filter(function (y) { return y.id !== x.id; }); }, '삭제: ' + x.name);
+      goList(); toast('지웠어요');
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = '삭제'; }
+      toast(failText(e).replace('저장하지', '지우지'));
+    }
+  }
+
+  /* ---------- 설정 ---------- */
+  function openMenu() {
+    layer.innerHTML = '<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shT">' +
+      '<h2 id="shT">설정</h2><p class="sub">기록은 GitHub 비공개 저장소(sul-girok-data)에 저장돼요. 저장할 때마다 이전 내용도 함께 남아요.</p>' +
+      '<button class="sitem" id="reload"><span class="l">다시 불러오기</span><span class="d">다른 기기에서 적은 기록을 바로 가져와요.</span></button>' +
+      '<button class="sitem" id="retok"><span class="l">토큰 바꾸기</span><span class="d">토큰이 만료됐을 때 새 토큰을 넣어요.</span></button>' +
+      '<button class="sitem danger" id="logout"><span class="l">이 기기에서 연결 끊기</span><span class="d">기록은 GitHub에 그대로 남아요.</span></button>' +
+      '<div id="outMsg"></div>' +
+      '<button class="btn ghost" id="shClose">닫기</button></div></div>';
+    var close = function () { layer.innerHTML = ''; var mb = document.getElementById('menuBtn'); if (mb) mb.focus(); };
+    document.getElementById('shClose').addEventListener('click', close);
+    document.getElementById('scrim').addEventListener('click', function (e) { if (e.target.id === 'scrim') close(); });
+    document.getElementById('reload').addEventListener('click', async function () { close(); await refresh(); if (store === 'ok') toast('새로 불러왔어요'); });
+    document.getElementById('retok').addEventListener('click', function () { layer.innerHTML = ''; renderSetup(false); });
+    document.getElementById('logout').addEventListener('click', function () {
+      var box = document.getElementById('outMsg');
+      box.innerHTML = '<div class="confirm" style="padding:8px 0"><p>이 기기에서 연결을 끊을까요? 다시 쓰려면 토큰을 또 넣어야 해요.</p><div class="btns"><button class="btn danger" id="outGo">연결 끊기</button></div></div>';
+      document.getElementById('outGo').addEventListener('click', function () {
+        lsSet(K_TOKEN, null); lsSet(K_CACHE, null); token = null; items = []; store = 'none';
+        layer.innerHTML = ''; renderSetup(false);
+      });
+    });
+    document.getElementById('shClose').focus();
+  }
+
+  /* ---------- 시작 ---------- */
+  function onData() {
+    if (store === 'none') { renderSetup(false); return; }
+    if (store === 'auth') { renderSetup(true); return; }
+    if (S.view === 'setup') { goList(); return; }
+    if (S.view === 'list') updateList();
+    else if (S.view === 'detail') { if (!S.confirmDelete) renderDetail(); }
+    else if (S.view === 'form') updateDup();
+  }
+  function render() { onData(); }
+
+  if (!token) { store = 'none'; renderSetup(false); }
+  else {
+    try { var cached = JSON.parse(lsGet(K_CACHE) || '[]'); if (Array.isArray(cached)) items = cached; } catch (e) {}
+    goList();
+    refresh();
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && token && (S.view === 'list' || S.view === 'detail')) refresh();
+  });
+})();
+</script>
+</body>
+</html>
