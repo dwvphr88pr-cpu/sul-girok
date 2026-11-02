@@ -772,7 +772,6 @@ button{cursor:pointer;background:none;border:0;padding:0}
   function openMenu() {
     layer.innerHTML = '<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shT">' +
       '<h2 id="shT">설정</h2><p class="sub">기록은 GitHub 비공개 저장소(sul-girok-data)에 저장돼요. 저장할 때마다 이전 내용도 함께 남아요.</p>' +
-      '<button class="sitem" id="reload"><span class="l">다시 불러오기</span><span class="d">다른 기기에서 적은 기록을 바로 가져와요.</span></button>' +
       '<button class="sitem" id="retok"><span class="l">토큰 바꾸기</span><span class="d">토큰이 만료됐을 때 새 토큰을 넣어요.</span></button>' +
       '<button class="sitem danger" id="logout"><span class="l">이 기기에서 연결 끊기</span><span class="d">기록은 GitHub에 그대로 남아요.</span></button>' +
       '<div id="outMsg"></div>' +
@@ -780,7 +779,6 @@ button{cursor:pointer;background:none;border:0;padding:0}
     var close = function () { layer.innerHTML = ''; var mb = document.getElementById('menuBtn'); if (mb) mb.focus(); };
     document.getElementById('shClose').addEventListener('click', close);
     document.getElementById('scrim').addEventListener('click', function (e) { if (e.target.id === 'scrim') close(); });
-    document.getElementById('reload').addEventListener('click', async function () { close(); await refresh(); if (store === 'ok') toast('새로 불러왔어요'); });
     document.getElementById('retok').addEventListener('click', function () { layer.innerHTML = ''; renderSetup(false); });
     document.getElementById('logout').addEventListener('click', function () {
       var box = document.getElementById('outMsg');
