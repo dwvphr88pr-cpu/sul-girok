@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>술 기록</title>
+<title>술장부</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="술 기록">
+<meta name="apple-mobile-web-app-title" content="술장부">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#F3F3F1">
 <meta name="robots" content="noindex">
@@ -281,7 +281,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
     for (var attempt = 0; attempt < 3; attempt++) {
       var cur = await fetchRemote();
       var next = mutator(cur.items.slice());
-      var text = JSON.stringify({ app: '술 기록', version: 1, items: next }, null, 1) + '\n';
+      var text = JSON.stringify({ app: '술장부', version: 1, items: next }, null, 1) + '\n';
       try {
         await gh('PUT', { message: message, content: textToB64(text), sha: cur.sha, branch: 'main' });
         setItems(next);
@@ -349,7 +349,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   function renderSetup(again) {
     S.view = 'setup';
     app.innerHTML = '<div class="setup">' +
-      '<h1>술 기록</h1>' +
+      '<h1>술장부</h1>' +
       '<p>' + (again ? 'GitHub 연결이 끊겼어요. 토큰이 만료됐거나 지워졌을 수 있어요. 새 토큰을 넣어 주세요.'
                      : '기록은 내 GitHub 비공개 저장소에 저장돼요. 이 기기에서 처음 한 번만 토큰을 넣어 주세요.') + '</p>' +
       '<div><label class="label" for="tok">GitHub 토큰</label>' +
@@ -414,7 +414,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   function renderListShell() {
     app.innerHTML =
       '<header class="top">' +
-        '<div class="bar"><h1 class="title">술 기록</h1><button class="icon-btn" id="menuBtn" aria-label="설정">' + ICON.dots + '</button></div>' +
+        '<div class="bar"><h1 class="title">술장부</h1><button class="icon-btn" id="menuBtn" aria-label="설정">' + ICON.dots + '</button></div>' +
         '<div class="search">' + ICON.search +
           '<input id="q" type="search" placeholder="이름으로 찾기" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="이름으로 찾기">' +
           '<button class="clear" id="qClear" aria-label="검색어 지우기" hidden>' + ICON.x + '</button>' +
