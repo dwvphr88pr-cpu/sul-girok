@@ -414,7 +414,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   function renderListShell() {
     app.innerHTML =
       '<header class="top">' +
-        '<div class="bar"><h1 class="title">술장부</h1><button class="icon-btn" id="menuBtn" aria-label="설정">' + ICON.dots + '</button></div>' +
+        '<div class="bar"><h1 class="title">술장부</h1></div>' +
         '<div class="search">' + ICON.search +
           '<input id="q" type="search" placeholder="이름으로 찾기" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="이름으로 찾기">' +
           '<button class="clear" id="qClear" aria-label="검색어 지우기" hidden>' + ICON.x + '</button>' +
@@ -431,7 +431,6 @@ button{cursor:pointer;background:none;border:0;padding:0}
     q.value = S.q;
     q.addEventListener('input', function () { S.q = q.value; updateList(); });
     document.getElementById('qClear').addEventListener('click', function () { S.q = ''; q.value = ''; updateList(); q.focus(); });
-    document.getElementById('menuBtn').addEventListener('click', openMenu);
     document.getElementById('fab').addEventListener('click', function () { openForm(null, { wish: S.tab === 'wish' }); });
     app.querySelectorAll('[data-sort]').forEach(function (b) {
       b.addEventListener('click', function () { S.sort = b.getAttribute('data-sort'); savePrefs(); updateList(); });
@@ -766,29 +765,6 @@ button{cursor:pointer;background:none;border:0;padding:0}
       if (btn) { btn.disabled = false; btn.textContent = '삭제'; }
       toast(failText(e).replace('저장하지', '지우지'));
     }
-  }
-
-  /* ---------- 설정 ---------- */
-  function openMenu() {
-    layer.innerHTML = '<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shT">' +
-      '<h2 id="shT">설정</h2><p class="sub">기록은 GitHub 비공개 저장소(sul-girok-data)에 저장돼요. 저장할 때마다 이전 내용도 함께 남아요.</p>' +
-      '<button class="sitem" id="retok"><span class="l">토큰 바꾸기</span><span class="d">토큰이 만료됐을 때 새 토큰을 넣어요.</span></button>' +
-      '<button class="sitem danger" id="logout"><span class="l">이 기기에서 연결 끊기</span><span class="d">기록은 GitHub에 그대로 남아요.</span></button>' +
-      '<div id="outMsg"></div>' +
-      '<button class="btn ghost" id="shClose">닫기</button></div></div>';
-    var close = function () { layer.innerHTML = ''; var mb = document.getElementById('menuBtn'); if (mb) mb.focus(); };
-    document.getElementById('shClose').addEventListener('click', close);
-    document.getElementById('scrim').addEventListener('click', function (e) { if (e.target.id === 'scrim') close(); });
-    document.getElementById('retok').addEventListener('click', function () { layer.innerHTML = ''; renderSetup(false); });
-    document.getElementById('logout').addEventListener('click', function () {
-      var box = document.getElementById('outMsg');
-      box.innerHTML = '<div class="confirm" style="padding:8px 0"><p>이 기기에서 연결을 끊을까요? 다시 쓰려면 토큰을 또 넣어야 해요.</p><div class="btns"><button class="btn danger" id="outGo">연결 끊기</button></div></div>';
-      document.getElementById('outGo').addEventListener('click', function () {
-        lsSet(K_TOKEN, null); lsSet(K_CACHE, null); token = null; items = []; store = 'none';
-        layer.innerHTML = ''; renderSetup(false);
-      });
-    });
-    document.getElementById('shClose').focus();
   }
 
   /* ---------- 시작 ---------- */
