@@ -613,9 +613,7 @@ img[data-pkey]:not([src]){visibility:hidden}
       : '<span class="rs num' + (x.score === 5 ? ' five' : '') + '" aria-hidden="true">' + (x.score || '–') + '</span>';
     var line = firstLine(x.note);
     var sub = '';
-    if (S.tab === 'all' || S.q) sub = x.type + (line ? ' · ' + line : '');
-    else sub = line;
-    if (x.wish && !line) sub = (S.tab === 'all' || S.q) ? x.type + ' · 마셔볼 술' : '';
+    sub = line || (x.wish && (S.tab === 'all' || S.q) ? '마셔볼 술' : '');
     var label = x.wish ? '마셔볼 술' : (x.score ? x.score + '점 ' + scoreInfo(x.score)[1] : '');
     return '<div class="row" data-row="' + esc(x.id) + '">' + thumb +
       '<button class="row-btn" data-id="' + esc(x.id) + '" aria-label="' + esc(x.name + ', ' + label) + '">' +
