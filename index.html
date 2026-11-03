@@ -231,11 +231,12 @@ img[data-pkey]:not([src]){visibility:hidden}
   var K_TOKEN = 'sul-girok:token', K_CACHE = 'sul-girok:cache', K_PREFS = 'sul-girok:prefs';
 
   /* ---------- 기준 ---------- */
-  var TYPES = ['소주', '맥주', '막걸리'];
+  var TYPES = ['소주', '맥주', '막걸리', '기타'];
   var TASTE = {
     '소주':   [['sweet', '단맛'], ['strong', '독함'], ['finish', '뒷맛'], ['aroma', '향']],
     '맥주':   [['bitter', '쓴맛'], ['fizz', '탄산'], ['body', '묵직함'], ['aroma', '향']],
-    '막걸리': [['sweet', '단맛'], ['fizz', '탄산'], ['body', '묵직함'], ['sour', '산미']]
+    '막걸리': [['sweet', '단맛'], ['fizz', '탄산'], ['body', '묵직함'], ['sour', '산미']],
+    '기타':   [['sweet', '단맛'], ['strong', '독함'], ['body', '묵직함'], ['aroma', '향']]
   };
   var SCORES = [
     [5, '찾아서 산다', '일부러 찾아가서라도 산다'],
@@ -549,16 +550,9 @@ img[data-pkey]:not([src]){visibility:hidden}
 
   function updateList() {
     if (S.view !== 'list') return;
-    var tabs = [['all', '전체'], ['소주', '소주'], ['맥주', '맥주'], ['막걸리', '막걸리'], ['wish', '마셔볼 술']];
-    var tried = items.filter(function (x) { return !x.wish; });
-    function cnt(id) {
-      if (id === 'all') return tried.length;
-      if (id === 'wish') return items.length - tried.length;
-      return tried.filter(function (x) { return x.type === id; }).length;
-    }
+    var tabs = [['all', '전체'], ['소주', '소주'], ['맥주', '맥주'], ['막걸리', '막걸리'], ['기타', '기타'], ['wish', '마셔볼 술']];
     document.getElementById('tabs').innerHTML = tabs.map(function (t) {
-      var n = cnt(t[0]);
-      return '<button class="tab" role="tab" data-tab="' + t[0] + '" aria-selected="' + (S.tab === t[0]) + '">' + t[1] + (n ? '<span class="n num">' + n + '</span>' : '') + '</button>';
+      return '<button class="tab" role="tab" data-tab="' + t[0] + '" aria-selected="' + (S.tab === t[0]) + '">' + t[1] + '</button>';
     }).join('');
     document.querySelectorAll('[data-tab]').forEach(function (b) {
       b.addEventListener('click', function () { S.tab = b.getAttribute('data-tab'); savePrefs(); updateList(); window.scrollTo(0, 0); });
@@ -604,11 +598,12 @@ img[data-pkey]:not([src]){visibility:hidden}
     if (cta) cta.addEventListener('click', function () { openForm(null, { name: S.q.trim(), wish: S.tab === 'wish' }); });
   }
 
+  function phChar(x) { return x.type === '기타' ? '' : esc(String(x.type || '').charAt(0)); }
   function rowHtml(x) {
     var k = photoKey(x);
     var thumb = k
       ? '<button class="th img" data-view="' + esc(x.id) + '" aria-label="' + esc(x.name) + ' 사진 크게 보기"><img alt="" data-pkey="' + esc(k) + '"></button>'
-      : '<span class="th ph" aria-hidden="true">' + esc(String(x.type || '').charAt(0)) + '</span>';
+      : '<span class="th ph" aria-hidden="true">' + phChar(x) + '</span>';
     var mark = x.wish ? '<span class="rs wish num" aria-hidden="true">–</span>'
       : '<span class="rs num' + (x.score === 5 ? ' five' : '') + '" aria-hidden="true">' + (x.score || '–') + '</span>';
     var line = firstLine(x.note);
@@ -653,7 +648,7 @@ img[data-pkey]:not([src]){visibility:hidden}
       var pk = photoKey(x);
       html += '<div class="card scorebox">' +
         (pk ? '<button class="th img" id="dPhoto" aria-label="' + esc(x.name) + ' 사진 크게 보기"><img alt="" data-pkey="' + esc(pk) + '"></button>'
-            : '<span class="th ph" aria-hidden="true">' + esc(String(x.type || '').charAt(0)) + '</span>') +
+            : '<span class="th ph" aria-hidden="true">' + phChar(x) + '</span>') +
         '<div class="sb-text"><div class="sb-label">' + si[1] + '</div><div class="sb-desc">' + si[2] + '</div></div>' +
         '<span class="bignum num' + (x.score === 5 ? ' five' : '') + '">' + x.score + '</span></div>';
     }
