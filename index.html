@@ -104,6 +104,7 @@ img[data-pkey]:not([src]){visibility:hidden}
 /* 상세 */
 .viewer{position:fixed;inset:0;z-index:40;background:rgba(20,20,18,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(64px + env(safe-area-inset-top,0px)) var(--gutter-r) calc(48px + env(safe-area-inset-bottom,0px)) var(--gutter)}
 .vimg{width:100%;max-width:440px;aspect-ratio:1/1;max-height:70vh;background:#FFFFFF;border-radius:18px;padding:20px;overflow:hidden}
+.viewer.gone{opacity:0;pointer-events:none;transition:opacity .12s}
 .vname{color:#FFFFFF;font-size:15px;text-align:center}
 .vclose{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px, env(safe-area-inset-right,0px));width:44px;height:44px;border-radius:22px;color:#FFFFFF;display:flex;align-items:center;justify-content:center}
 .vclose svg{width:16px;height:16px}
@@ -414,9 +415,25 @@ img[data-pkey]:not([src]){visibility:hidden}
     var close = function () { layer.innerHTML = ''; document.removeEventListener('keydown', onKey); };
     var onKey = function (e) { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
-    document.getElementById('viewer').addEventListener('click', close);
+    var v = document.getElementById('viewer');
+    v.addEventListener('click', close);
+    /* 큰 사진을 끌기 시작하면 바로 닫아서 아래 화면에 놓을 수 있게 한다 */
+    v.addEventListener('dragstart', function () {
+      setTimeout(function () { v.classList.add('gone'); }, 0);
+    });
+    var done = function () { if (document.getElementById('viewer') === v) close(); };
+    v.addEventListener('dragend', done);
+    document.addEventListener('drop', done, { once: true });
     document.getElementById('vclose').focus();
   }
+
+  /* 앱 안의 사진(목록·상세·큰 사진)을 끌면 어떤 기록의 사진인지 함께 실어 보낸다 */
+  var DRAG_TYPE = 'application/x-sul-photo';
+  document.addEventListener('dragstart', function (e) {
+    var img = e.target && e.target.closest ? e.target.closest('img[data-pkey]') : null;
+    if (!img || !e.dataTransfer) return;
+    try { e.dataTransfer.setData(DRAG_TYPE, img.getAttribute('data-pkey')); e.dataTransfer.effectAllowed = 'copy'; } catch (err) {}
+  });
 
   /* ---------- 도구 ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -819,9 +836,20 @@ img[data-pkey]:not([src]){visibility:hidden}
     try { u = (dt.getData('text/uri-list') || '').split(/\r?\n/).filter(function (l) { return l && l.charAt(0) !== '#'; })[0] || ''; } catch (e) {}
     if (!u) { try { var m = (dt.getData('text/html') || '').match(/<img[^>]+src=["']([^"']+)/i); if (m) u = m[1].replace(/&amp;/g, '&'); } catch (e) {} }
     if (!u) { try { var t = (dt.getData('text/plain') || '').trim(); if (/^https?:\/\/\S+$/.test(t)) u = t; } catch (e) {} }
-    return /^https?:\/\//.test(u) ? u : '';
+    return /^(https?:\/\/|blob:)/.test(u) ? u : '';
   }
   async function takeTransfer(dt) {
+    var key = '';
+    try { key = dt.getData(DRAG_TYPE) || ''; } catch (e) {}
+    if (key) {
+      try {
+        var u0 = await loadPhoto(key);
+        var b0 = u0 ? await (await fetch(u0)).blob() : null;
+        if (!b0) throw new Error('none');
+        setPhoto(b0);
+      } catch (e) { toast('사진을 가져오지 못했어요. 다시 끌어다 놓아 주세요.'); }
+      return true;
+    }
     var f = imageFrom(dt);
     if (f) { setPhoto(f); return true; }
     var url = imageUrlFrom(dt);
