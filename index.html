@@ -1024,6 +1024,11 @@ img[data-pkey]:not([src]){visibility:hidden}
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible' && token && (S.view === 'list' || S.view === 'detail')) refresh();
   });
+
+  /* 앱을 열 때마다 최신 버전을 먼저 받아 오고, 인터넷이 없으면 마지막 버전으로 열기 */
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {});
+  }
 })();
 </script>
 </body>
