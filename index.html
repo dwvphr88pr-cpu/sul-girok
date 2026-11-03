@@ -598,7 +598,7 @@ img[data-pkey]:not([src]){visibility:hidden}
     if (cta) cta.addEventListener('click', function () { openForm(null, { name: S.q.trim(), wish: S.tab === 'wish' }); });
   }
 
-  function phChar(x) { return x.type === '기타' ? '' : esc(String(x.type || '').charAt(0)); }
+  function phChar(x) { return esc(String(x.type || '').charAt(0)); }
   function rowHtml(x) {
     var k = photoKey(x);
     var thumb = k
